@@ -1,0 +1,16 @@
+node_modules/
+mongodbdata/
+mongodb_data/
+mysqlData/
+coverage/
+logger/
+src/
+.env
+.conf
+*.log
+*.PNG
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.sock
