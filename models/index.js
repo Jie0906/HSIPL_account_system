@@ -16,7 +16,6 @@ const sequelize = new Sequelize(process.env.DB_DB, process.env.DB_USER, process.
 
 
 const db = {};
-
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
@@ -32,7 +31,6 @@ db.UserBalance = require("./User/UserBalanceModel")(sequelize, Sequelize);
 db.Fund = require("./Fund/FundModel")(sequelize, Sequelize);
 db.FundTransfer = require("./Fund/FundTransferModel")(sequelize, Sequelize);
 db.FundLog = require("./Fund/FundLogModel")(sequelize, Sequelize);
-db.FundCategory = require("./Fund/FundCategoryModel")(sequelize, Sequelize);
 db.LabBalance = require("./Fund/LabBalanceModel")(sequelize, Sequelize);
 
 // 定義關聯
@@ -74,12 +72,8 @@ db.LabBalance.belongsTo(db.FundTransfer, { foreignKey: 'fundTransferId' });
 // Fund relations
 db.Fund.belongsTo(db.User, { as: 'Purchaser', foreignKey: 'userId' });
 db.Fund.belongsTo(db.User, { as: 'Recorder', foreignKey: 'recorderUserId' });
-db.Fund.belongsTo(db.FundCategory, { foreignKey: 'categoryId' });
 db.Fund.hasOne(db.LabBalance, { foreignKey: 'fundId' });
 db.Fund.hasMany(db.FundLog, { foreignKey: 'fundId' });
-
-// FundCategory relations
-db.FundCategory.hasMany(db.Fund, { foreignKey: 'categoryId' });
 
 // FundTransfer relations
 db.FundTransfer.belongsTo(db.User, { as: 'Recorder', foreignKey: 'recorderUserId' });

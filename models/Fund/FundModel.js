@@ -1,39 +1,21 @@
-const Sequelize = require('sequelize')
-
 module.exports = (sequelize, DataTypes) =>{
     const Fund = sequelize.define('Fund', {
-        type:{
-            type:Sequelize.ENUM('INCOME','EXPENDITURE'),
-            allowNull: false,
-            validate: {
-                isIn: {
-                    args: [['INCOME', 'EXPENDITURE']],
-                    message: " Must be INCOME or EXPENDITURE "
-                  }
-            }
-        },
-        amount:{
-            type:DataTypes.INTEGER,
-            allowNull: true,
-        },
-        purchaseDate:{
-            type:DataTypes.DATE,
+        type: {
+            type: DataTypes.ENUM('INCOME', 'EXPENDITURE'),
             allowNull: false
-        },
-        description:{
-            type:DataTypes.STRING,
+          },
+          amount: {
+            type: DataTypes.BIGINT,
+            allowNull: false
+          },
+          purchaseDate: {
+            type: DataTypes.DATE,
+            allowNull: false
+          },
+          description: {
+            type: DataTypes.TEXT,
             allowNull: true
-        },
-        reviewStatus:{
-            type:Sequelize.ENUM('UNDER_REVIEW','ACCEPTED', 'REJECTED'),
-            allowNull: true,
-            validate: {
-                isIn: {
-                    args: [['UNDER_REVIEW', 'ACCEPTED', 'REJECTED']],
-                    message: "Must be UNDER_REVIEW, ACCEPTED or REJECTED "
-                  }
-            }
-        }
+          },
     },{
         paranoid: true,
     });
