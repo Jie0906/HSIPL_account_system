@@ -1,11 +1,14 @@
 module.exports = (sequelize, DataTypes) =>{
     const LabBalance = sequelize.define('LabBalance', {
-        currentBalance:{
-            type:DataTypes.STRING,
-        },
-        lastUpdated:{
-            type:DataTypes.DATE,
-        }
+          totalBalance: {
+            type: DataTypes.BIGINT,
+            allowNull: false
+          },
+          lastUpdated: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW
+          }
     },{
         paranoid: true,
     });

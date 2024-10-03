@@ -1,17 +1,21 @@
 module.exports = (sequelize, DataTypes) =>{
     const FundLog = sequelize.define('FundLog',{
-        amount:{
-            type:DataTypes.INTEGER,
+        type: {
+            type: DataTypes.ENUM('INCOME', 'EXPENDITURE',  'TRANSFER'),
             allowNull: false
-        },
-        date: {
-            type:DataTypes.DATE,
+          },
+          amount: {
+            type: DataTypes.BIGINT,
             allowNull: false
-        },
-        description: {
-            type:DataTypes.STRING,
+          },
+          date: {
+            type: DataTypes.DATE,
             allowNull: false
-        }
+          },
+          description: {
+            type: DataTypes.TEXT,
+            allowNull: true
+          }
     },{
         paranoid: true,
     })

@@ -3,7 +3,7 @@ const Sequelize = require('sequelize')
 module.exports = (sequelize, DataTypes) =>{
     const FundTransfer = sequelize.define('FundTransfer', {
         amount:{
-            type:DataTypes.INTEGER,
+            type:DataTypes.BIGINT,
             allowNull: true,
         },
         transferDate:{
@@ -14,16 +14,6 @@ module.exports = (sequelize, DataTypes) =>{
             type:DataTypes.STRING,
             allowNull: true
         },
-        reviewStatus:{
-            type:Sequelize.ENUM('UNDER_REVIEW','ACCEPTED', 'REJECTED'),
-            allowNull: true,
-            validate: {
-                isIn: {
-                    args: [['UNDER_REVIEW', 'ACCEPTED', 'REJECTED']],
-                    message: "Must be UNDER_REVIEW, ACCEPTED or REJECTED "
-                  }
-            }
-        }
     },{
         paranoid: true,
     });
