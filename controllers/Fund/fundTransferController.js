@@ -1,101 +1,99 @@
-const db = require('../models/index')
+const db = require('../../models/index')
 const User = db.User
 const FundTransfer = db.FundTransfer
 const FundLog = db.FundLog
 const UserBalance = db.UserBalance
 const LabBalance = db.LabBalance
-const FundCategory = db.FundCategory
 const sequelize = db.sequelize;
-const errorHandler = require('../middleware/errorHandler')
 
-class fundTransfer {
+class fundTransferController {
     fundTransfer = async (req, res, next) => {
+        const t = await sequelize.transaction()
         try{
-        const { type, content, date, fromName, toName, amount } = req.body
+        const { fromUserId, toUserId, amount, transferDate, description } = req.body
+        const recorderUserName = req.user.payload.name
+        if (!fromUserId || !toUserId || !amount || !transferDate || !description){
+            const error = new Error('Field cannot be empty.');
+            error.status = 400;
+            throw error;
+        }
+        const numericAmount = Number(amount)
+
+        const recorder = await User.findOne({ where: { name: recorderUserName }, transaction: t });
+        if (!recorder) {
+          const error = new Error('Recorder not found.');
+          error.status = 404;
+          throw error;
+        }
         //獲取匯款人相關訊息
-        const fromNameExist = await User.findOne({
-            where: { name: fromName }
-        })
+        const fromUser = await UserBalance.findOne({ where: { userId: fromUserId }, transaction: t });
+        if (!fromUser) {
+            const error = new Error('formUser not found.');
+            error.status = 404;
+            throw error;
+          }
         //獲取被轉帳人相關訊息
-        const toNameExist = await User.findOne({
-            where: { name: toName }
-        })
+        const toUser = await UserBalance.findOne({ where: { userId: toUserId }, transaction: t });
+        if (!toUser) {
+            const error = new Error('toUser not found.');
+            error.status = 404;
+            throw error;
+          }
 
-        //獲取紀錄者相關訊息
-        const recorderName = await User.findOne({
-            where: { name: req.user.payload.name }
-        })
-        //確認轉帳方 & 收款方皆存在於資料庫內
-        if (!fromNameExist || !toNameExist) {
-            const error = new Error('Data not found.')
-            error.status = 404
-            throw error
-        }
-        //計算目前實驗室經費
-        const totalAmount = await Fund.sum('sum', {
-            where: { type: { [Op.or]: ['EXPENDITURE', 'INCOME'] } }
-        })
-        //若實驗室目前經費小於匯款金額 則轉帳失敗
-        if (totalAmount < amount) {
-            const error = new Error('Balabnce not enough.')
-            error.status = 400
-            throw error
-        }
-        let transferInfor = {
-            transferLog:`${fromName} transfered ${amount} to ${toName}.`,
-            date
+        //轉帳前確認
+        if (fromUser.currentBalance < numericAmount){
+            const error = new Error('Balance not enough.');
+            error.status = 400;
+            throw error;
         }
 
-        const transferLog = await FundTransferLog.create(transferInfor)
-        let fromNameInfor = {
-            type,
-            tag: 'REMITTER',
-            content,
-            date,
-            name: fromName,
-            sum: amount,
-            note: `to ${toName}`,
-            recorderName: recorderName.name,
-            userId: fromNameExist.id,
-            transferId: transferLog.id
-        }
+        //進行扣款
+        //更新轉出方餘額
+        const newFromUserBalance = fromUser.currentBalance - numericAmount;
+        await UserBalance.update(
+            { currentBalance: newFromUserBalance, lastUpdated: new Date() },
+            { where: { userId: fromUserId }, transaction: t }
+        );
 
-        let toNameInfor = {
-            type,
-            tag: 'REMITTEE',
-            content,
-            date,
-            name: toName,
-            sum: amount,
-            note: `from ${fromName}`,
-            recorderName: recorderName.name,
-            userId: toNameExist.id,
-            transferId: transferLog.id
-        }
-        await Fund.create(fromNameInfor)
-        await Fund.create(toNameInfor)
-        await UserLog.create({
-            message: `${fromName} transfered ${amount} to ${toName}.`,
-            userId: fromNameExist.id
-        })
+        //更新轉入方餘額
+        const newToUserBalance = toUser.currentBalance + numericAmount;
+        await UserBalance.update(
+            { currentBalance: newToUserBalance, lastUpdated: new Date() },
+            { where: { userId: toUserId }, transaction: t }
+        );
 
-        //更新轉帳方餘額
-        const fromNameAllPayedSum = await conutTotalAmount(fromName)
-        await User.update({ balance: fromNameAllPayedSum }, { where: { name: fromName } })
+        // 創建轉帳記錄
+        const transferDetail = await FundTransfer.create({
+            recorderUserId: recorder.id,
+            fromUserId,
+            toUserId,
+            amount: numericAmount,
+            transferDate,
+            description
+        }, { transaction: t });
 
-        //更新收款方餘額
-        const toNameAllPayedSum = await conutTotalAmount(toName)
-        await User.update({ balance: toNameAllPayedSum }, { where: { name: toName } })
+        //寫入FundLog
+        await FundLog.create({
+            type: 'TRANSFER',
+            amount,
+            description: `User ${fromUserId} transferred ${numericAmount} to User ${toUserId}`,
+            fundTransferId: transferDetail.id,
+            date: new Date()
+          }, { transaction: t });
+
+        await t.commit();
 
         return res.status('200').json({
-            state: "Sucess!"
+            TransferStatus: "Sucess!",
+            Detail: transferDetail
         })
         }
         catch(error){
+            await t.rollback();
             next(error)
         }
     }
 }
 
 
-module.exports = new fundTransfer()
+module.exports = new fundTransferController()
