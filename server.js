@@ -1,5 +1,6 @@
-const app = require('./app');
+const app = require('./app')
 const db = require('./models/index')
+const runSeeds = require('./utils/seedRunner')
 
 //{force:true}
 db.sequelize.sync().then(() => {

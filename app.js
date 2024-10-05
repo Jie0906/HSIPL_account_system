@@ -17,6 +17,10 @@ const homepagePath = path.join(__dirname, "views", "homepage.html")
 
 //require middleware
 const userRoute = require("./routes/userRoute")
+const roleRoute = require("./routes/user/roleRoute")
+const permissionRoute = require("./routes/user/permissionRoute")
+const userRoleRoute = require("./routes/user/userRoleRoute")
+const rolePermission = require("./routes/user/rolePermissionRoute")
 const profileRoute = require('./routes/profileRoute')
 const fundRoute = require("./routes/fundRoute")
 const fundTransferRoute = require('./routes/fund/fundTransferRoute')
@@ -27,7 +31,9 @@ require ('./config/passport')(passport)
 const app = express();
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  signed: true
+  resave: false,
+  signed: true,
+  saveUninitialized: false,
 }
 ))
 app.use(passport.initialize())
@@ -66,6 +72,10 @@ app.use(express.urlencoded({extended: true}))
 
 //路由設定
 app.use("/api/user", userRoute)
+app.use("/api/role", roleRoute)
+app.use("/api/permission", permissionRoute)
+app.use("/api/userRole", userRoleRoute)
+app.use("/api/rolePermission", rolePermission)
 app.use("/api/profile", profileRoute)
 app.use("/api/fund", fundRoute)
 app.use("/api/fundTransfer",fundTransferRoute )
