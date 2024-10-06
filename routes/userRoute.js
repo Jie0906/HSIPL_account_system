@@ -13,6 +13,7 @@ router.post("/forgetPassword", userController.forgetPassword)
 router.get("/find", tokenController.verifyToken ,userController.findUser)
 router.put("/resetPassword", userController.resetPassword)
 router.delete("/:id", tokenController.verifyToken, userController.deleteUser)
+router.post("/:id", tokenController.verifyToken, userController.restoreUser)
 
 
 
