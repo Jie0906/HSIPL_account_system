@@ -14,57 +14,101 @@ This account system is for the Lab HSIPL at NYUST. It assists lab members with m
 ```plaintext
 .
 ├── Dockerfile
+├── README.md
 ├── app.js
 ├── config
 │   ├── auth.config.js
-│   ├── db.config.js
+│   ├── database.config.js
 │   ├── mail.config.js
-│   ├── googleAuth.config.js
+│   ├── passport.js
 │   └── redisClient.config.js
 ├── controllers
+│   ├── Fund
+│   │   ├── fundCategoryController.js
+│   │   └── fundTransferController.js
+│   ├── User
+│   │   ├── permissionController.js
+│   │   ├── roleController.js
+│   │   ├── rolePermissonController.js
+│   │   └── userRoleController.js
 │   ├── fundController.js
 │   ├── profileController.js
 │   ├── publicController.js
 │   └── userController.js
 ├── docker-compose.yml
-├── document.txt
-├── dump.rdb
-├── hsipl_account_system.postman_collection.json
 ├── middleware
-│   ├── fileDelete.js
+│   ├── checkPermission.js
+│   ├── deleteFile.js
 │   ├── errorHandler.js
-│   ├── fileUpload.js
+│   ├── imageUpload.js
 │   ├── sessionIdController.js
 │   └── tokenController.js
 ├── models
-│   ├── fundModel.js
-│   ├── fundTransferLogModel.js
-│   ├── index.js
-│   ├── permissionModel.js
-│   ├── roleModel.js
-│   ├── rolePermissionModel.js
-│   ├── userLogModel.js
-│   ├── userModel.js
-│   └── userRoleModel.js
+│   ├── Fund
+│   │   ├── FundLogModel.js
+│   │   ├── FundModel.js
+│   │   ├── FundTransferModel.js
+│   │   └── LabBalanceModel.js
+│   ├── User
+│   │   ├── PermissionModel.js
+│   │   ├── ResetPasswordTokenModel.js
+│   │   ├── RoleModel.js
+│   │   ├── RolePermissionModel.js
+│   │   ├── UserBalanceModel.js
+│   │   ├── UserModel.js
+│   │   └── UserRoleModel.js
+│   └── index.js
 ├── package-lock.json
 ├── package.json
 ├── redis.conf
 ├── routes
 │   ├── authRoute.js
+│   ├── fund
+│   │   ├── fundCategoryRoute.js
+│   │   └── fundTransferRoute.js
 │   ├── fundRoute.js
-│   ├── labRoute.js
 │   ├── profileRoute.js
 │   ├── publicRoute.js
-│   ├── teacherRoute.js
+│   ├── user
+│   │   ├── permissionRoute.js
+│   │   ├── rolePermissionRoute.js
+│   │   ├── roleRoute.js
+│   │   └── userRoleRoute.js
 │   └── userRoute.js
+├── seeders
+│   └── 20241004234750-init-admin-roles-permissions.js
 ├── server.js
 ├── structure.txt
-├── swagger.yml
+├── tests
+│   └── controllers
+│       ├── fund
+│       │   ├── addItem.test.js
+│       │   ├── deleteItem.test.js
+│       │   ├── getAllItem.test.js
+│       │   ├── getItemById.test.js
+│       │   ├── restoreItem.test.js
+│       │   ├── searchItem.test.js
+│       │   └── updateItem.test.js
+│       ├── fundTransfer
+│       │   └── fundTransfer.test.js
+│       └── user
+│           ├── createUser.test.js
+│           ├── deleteUser.test.js
+│           ├── findUser.test.js
+│           ├── forgetPassword.test.js
+│           ├── login.test.js
+│           ├── logout.test.js
+│           ├── resetPassword.test.js
+│           └── restoreUser.test.js
 ├── utils
+│   ├── balanceUtils.js
 │   ├── countTotalAmount.js
 │   ├── encryptPassword.js
+│   ├── fundLogUtils.js
+│   ├── seedRunner.js
 │   └── sessionUtils.js
 └── yarn.lock
+
 ```
 
 ## Installing & Usage
@@ -99,7 +143,7 @@ This account system is for the Lab HSIPL at NYUST. It assists lab members with m
 
 ### Download the Project
 
-```git clone https://github.com/Jie0906/HSIPL_algorithm.git```
+```git clone https://github.com/Jie0906/HSIPL_account_system.git```
 
 ### Install Dependencies
 
