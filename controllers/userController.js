@@ -3,17 +3,18 @@
  */
 const db = require('../models')
 const User = db.User
-const Fund = db.Fund
+const Role = db.Role
+const UserRole = db.UserRole
+const sequelize = db.sequelize
 const ResetPasswordToken = db.ResetPasswordToken
+const connectRedis = require('../config/redisClient.config')
 const { Op } = require('@sequelize/core')
-const errorHandler = require('../middleware/errorHandler')
 const {
     encrypt: encrypt,
     decrypt: decrypt,
 } = require("../utils/encryptPassword")
 const nodemailer = require('nodemailer')
 const TokenController = require("../middleware/tokenController")
-const SessionIdController = require('../middleware/sessionIdController')
 const mailConfig = require('../config/mail.config')
 const jwt = require("jsonwebtoken")
 const config = require('../config/auth.config')
@@ -35,6 +36,7 @@ class userController {
 
     }
     createUser = async (req, res, next) => {
+        const t = await sequelize.transaction();
         try {
             const { name, username, password, email } = req.body
             //確認ip位址(白名單為實驗室ip)
@@ -81,59 +83,76 @@ class userController {
             //         throw error
             //     }
             // })
-            let infor = {
-                name: name,
-                username: username,
+            const newUser = await User.create({
+                name,
+                username,
                 password: encryptPassword,
-                email: email,
+                email,
+            }, { transaction: t })
+
+            // 賦予最低權限 normalUser
+            const userRole = await Role.findOne({ where: { name: 'normalUser' } });
+            if (!userRole) {
+                const error = new Error('Default user role not found.')
+                error.status = 409
+                throw error
             }
-            //新增user
-            await User.create(infor)
+            await UserRole.create({
+                userId: newUser.id,
+                roleId: userRole.id
+            }, { transaction: t });
+    
+            await t.commit();
             return res.status(201).json({
                 message: `Created User ${req.body.name} sucessfully.`
             })
         }
         catch (error) {
+            await t.rollback()
             next(error)
         }
     }
     login = async (req, res, next) => {
         /*登入邏輯
-            建立redis連線 -> 確認帳號密碼 -> 根據使用者資訊生成jwt & sessionID return 給 client -> sessionData儲存用戶登入狀態並設定時效 -> 將sessionData 存至 redis    
-         */
+            建立redis連線 -> 確認帳號密碼 -> 根據使用者資訊生成jwt return 給 client */
         try {
           const { username, password } = req.body
-          const userExist = await User.findOne({
-            where: {username: username}
-          })
-          if (!userExist) {
+          const user = await User.findOne({
+            where: { username: username },
+            include: [{
+                model: Role,
+                include: [Permission]
+            }]
+        })
+          if (!user) {
             const error = new Error('User did not exist.')
             error.status = 404
             throw error
-            }
-          const userId = userExist.id
+        }
+          const checkPassword = await decrypt(password, user.password);
+          if (!checkPassword) {
+            const error = new Error('Username or password was wrong, please try again.')
+            error.status = 403
+            throw error
+          }
+          const userId = user.id
           const payload = {
-            name: userExist.name,
-            mail: userExist.mail
+            name: user.name,
+            email: user.email
           }
           if (!username || !password) {
             const error = new Error('Field cannot be empty.')
             error.status = 400
             throw error
           }
-          const checkPassword = await decrypt(password, userExist.password);
-          if (!checkPassword) {
-            const error = new Error('Username or password was wrong, please try again.')
-            error.status = 403
-            throw error
-          }
+
             const jsonWebToken = await TokenController.signToken({payload})
-            const sessionId = await SessionIdController.gernerateSessionId(userId)
-            res.cookie('sessionId', sessionId, {
-                signed: true,
-                httpOnly: true,
-                sameSite: 'Strict'
-            });
+            const permissions = user.Roles.flatMap(role => 
+                role.Permissions.map(permission => permission.name)
+            );
+            const redisClient = await connectRedis()
+            await redisClient.set(`user:${user.email}:permissions`, JSON.stringify(permissions), 'EX', 3600)
+
             res.cookie('jsonWebToken', jsonWebToken, {
                 signed: true,
                 httpOnly: true,
@@ -141,9 +160,8 @@ class userController {
             });  
 
             return res.status(200).json({
-            message: `Login successfully! Welcome back ${userExist.name}.`,
-            accessToken: jsonWebToken,
-            sessionId: sessionId
+            message: `Login successfully! Welcome back ${user.name}.`,
+            accessToken: jsonWebToken
           })
      
         } catch (error) {
