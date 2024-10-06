@@ -168,6 +168,34 @@ class userController {
             next(error)
         }
       }
+
+      logout = async (req, res, next) => {
+        try {
+          const token = req.cookies.jsonWebToken;
+          if (!token) {
+            const error = new Error('No active session found.');
+            error.status = 400;
+            throw error;
+          }
+      
+          // 解碼 token 以獲取用戶信息
+          const decodedToken = await TokenController.verifyToken(token);
+          const userEmail = decodedToken.payload.email;
+      
+          // 清除 Redis 中的權限緩存
+          const redisClient = await connectRedis();
+          await redisClient.del(`user:${userEmail}:permissions`);
+      
+          // 清除客戶端的 cookie
+          res.clearCookie('jsonWebToken');
+      
+          return res.status(200).json({
+            message: 'Logged out successfully.'
+          });
+        } catch (error) {
+          next(error);
+        }
+      };
     //搜尋user名字的資訊
     findUser = async (req, res, next) => {
         const { name } = req.query

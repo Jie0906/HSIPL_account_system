@@ -1,7 +1,5 @@
 const userController = require('../controllers/userController')
 const tokenController = require('../middleware/tokenController')
-const sessionIdController = require('../middleware/sessionIdController')
-const imgUpload = require('../middleware/imgUpload')
 const router = require('express').Router()
 const passport = require('passport')
 
